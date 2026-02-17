@@ -9,7 +9,7 @@ A robust, role-based platform designed to bridge the gap between students, facul
 1. Clone the repository
 
 ``` 
-https://github.com/ShriyaAl/WebDevProject-Internship-Experential-Learning-Tracker.git
+https://github.com/ShriyaAl/WebDevProject-Internship-Experential-Learning-Tracker.git ./
 ```
 2. Install Dependencies
 ```
