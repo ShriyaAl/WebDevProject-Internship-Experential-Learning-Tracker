@@ -16,6 +16,12 @@ import Research from './Pages/Faculty/Research';
 import ManagerHome from './Pages/Manager/ManagerHome';
 
 import StudentHome from './Pages/Student/StudentHome';
+import StudentNavbar from './Pages/Student/StudentNavbar';
+import StudentExplore from './Pages/Student/StudentExplore';
+import MyApplications from './Pages/Student/MyApplications';
+import MyInternship from './Pages/Student/MyInternship';
+import ResearchLOR from './Pages/Student/ResearchLOR';
+import ProfileSkillHub from './Pages/Student/ProfileSkillHub';
 
 import AdminHome from './Pages/Admin/AdminHome';
 
@@ -37,7 +43,7 @@ const AppContent = () => {
     <div className="flex min-h-screen bg-[#f8fafc]">
       {/* Sidebars render only for their specific roles */}
       {isFaculty && <FacultyNavbar />}
-      {/* {isStudent && <StudentNavbar />}  <-- Add these as you build them */}
+      {isStudent && <StudentNavbar />}
 
       <div className="flex-1 flex flex-col">
         {/* Universal Top Header (Hidden on Login) */}
@@ -51,7 +57,8 @@ const AppContent = () => {
           </header>
         )}
 
-        <main className={isLoginPage ? "" : "p-8"}>
+        
+        <main className={isLoginPage ? "" : "flex-1 min-w-0 overflow-y-auto"}>
           <Routes>
             {/* Redirect root to login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
@@ -64,10 +71,16 @@ const AppContent = () => {
             <Route path='/research-faculty' element={<Research />} />
             <Route path='/insights-faculty' element={<FacultyInsights />} />
             <Route path='/profile-faculty' element={<FacultyProfile />} />
+            
 
             {/* Student */}
             <Route path='/home-student' element={<StudentHome/>} />
-
+            <Route path='/explore-student' element={<StudentExplore />} />
+            <Route path='/apps-student' element={<MyApplications />} />
+            <Route path='/internship-student' element={<MyInternship />} />
+            <Route path='/research-student' element={<ResearchLOR />} />
+            <Route path='/profile-student' element={<ProfileSkillHub />} />
+            
             {/* Manager */}
             <Route path='/home-manager' element={<ManagerHome/>} />
 
