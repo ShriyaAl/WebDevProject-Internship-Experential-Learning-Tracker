@@ -14,6 +14,10 @@ import FacultyProfile from './Pages/Faculty/FacultyProfile';
 import Research from './Pages/Faculty/Research';
 
 import ManagerHome from './Pages/Manager/ManagerHome';
+import Approvals from './Pages/Manager/Approvals';
+import Evaluation from './Pages/Manager/Evaluation';
+import ManagerProfile from './Pages/Manager/ManagerProfile';
+import ManagerNavbar from './Pages/Manager/ManagerNavbar';
 
 import StudentHome from './Pages/Student/StudentHome';
 
@@ -38,6 +42,7 @@ const AppContent = () => {
       {/* Sidebars render only for their specific roles */}
       {isFaculty && <FacultyNavbar />}
       {/* {isStudent && <StudentNavbar />}  <-- Add these as you build them */}
+      {isManager && <ManagerNavbar/>}
 
       <div className="flex-1 flex flex-col">
         {/* Universal Top Header (Hidden on Login) */}
@@ -70,6 +75,9 @@ const AppContent = () => {
 
             {/* Manager */}
             <Route path='/home-manager' element={<ManagerHome/>} />
+            <Route path='/approvals-manager' element={<Approvals/>} />
+            <Route path='/evaluations-manager' element={<Evaluation/>} />
+            <Route path='/profile-manager' element={<ManagerProfile/>} />
 
             {/* Admin */}
             <Route path='/home-admin' element={<AdminHome/>} />
