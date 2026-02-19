@@ -32,7 +32,6 @@ import AdminNavbar from './Pages/Admin/AdminNavbar';
 import AdminDashboard from './Pages/Admin/AdminDashboard';
 import UserManagement from './Pages/Admin/UserManagement';
 import ResearchApprovals from './Pages/Admin/ResearchApprovals';
-import PlatformSettings from './Pages/Admin/PlatformSettings';
 
 
 import './App.css'
@@ -105,7 +104,6 @@ const AppContent = () => {
             <Route path='/home-admin' element={<AdminDashboard/>} />
             <Route path='/users-admin' element={<UserManagement/>} />
             <Route path='/approvals-admin' element={<ResearchApprovals/>} />
-            <Route path='/settings-admin' element={<PlatformSettings/>} />
           </Routes>
         </main>
       </div>
