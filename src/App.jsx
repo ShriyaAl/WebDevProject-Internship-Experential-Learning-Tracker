@@ -14,6 +14,10 @@ import FacultyProfile from './Pages/Faculty/FacultyProfile';
 import Research from './Pages/Faculty/Research';
 
 import ManagerHome from './Pages/Manager/ManagerHome';
+import Approvals from './Pages/Manager/Approvals';
+import Evaluation from './Pages/Manager/Evaluation';
+import ManagerProfile from './Pages/Manager/ManagerProfile';
+import ManagerNavbar from './Pages/Manager/ManagerNavbar';
 
 import StudentHome from './Pages/Student/StudentHome';
 import StudentNavbar from './Pages/Student/StudentNavbar';
@@ -23,7 +27,13 @@ import MyInternship from './Pages/Student/MyInternship';
 import ResearchLOR from './Pages/Student/ResearchLOR';
 import ProfileSkillHub from './Pages/Student/ProfileSkillHub';
 
-import AdminHome from './Pages/Admin/AdminHome';
+
+import AdminNavbar from './Pages/Admin/AdminNavbar';
+import AdminDashboard from './Pages/Admin/AdminDashboard';
+import UserManagement from './Pages/Admin/UserManagement';
+import ResearchApprovals from './Pages/Admin/ResearchApprovals';
+import PlatformSettings from './Pages/Admin/PlatformSettings';
+
 
 import './App.css'
 
@@ -44,6 +54,10 @@ const AppContent = () => {
       {/* Sidebars render only for their specific roles */}
       {isFaculty && <FacultyNavbar />}
       {isStudent && <StudentNavbar />}
+      {/* {isStudent && <StudentNavbar />}  <-- Add these as you build them */}
+      {isManager && <ManagerNavbar/>}
+      {isAdmin && <AdminNavbar/>}
+
 
       <div className="flex-1 flex flex-col">
         {/* Universal Top Header (Hidden on Login) */}
@@ -83,9 +97,15 @@ const AppContent = () => {
             
             {/* Manager */}
             <Route path='/home-manager' element={<ManagerHome/>} />
+            <Route path='/approvals-manager' element={<Approvals/>} />
+            <Route path='/evaluations-manager' element={<Evaluation/>} />
+            <Route path='/profile-manager' element={<ManagerProfile/>} />
 
             {/* Admin */}
-            <Route path='/home-admin' element={<AdminHome/>} />
+            <Route path='/home-admin' element={<AdminDashboard/>} />
+            <Route path='/users-admin' element={<UserManagement/>} />
+            <Route path='/approvals-admin' element={<ResearchApprovals/>} />
+            <Route path='/settings-admin' element={<PlatformSettings/>} />
           </Routes>
         </main>
       </div>
