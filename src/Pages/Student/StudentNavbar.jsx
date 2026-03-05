@@ -19,11 +19,9 @@ export default function StudentNavbar() {
 
   // Unified Student Route Paths
   const navItems = [
-    { id: 'Home', icon: LayoutDashboard, label: 'Home', path: '/home-student' },
-    { id: 'Explore', icon: Search, label: 'Explore', path: '/explore-student' },
-    { id: 'Apps', icon: FileText, label: 'My Applications', path: '/apps-student' },
-    { id: 'Internship', icon: Briefcase, label: 'My Internship', path: '/internship-student' },
-    { id: 'Research', icon: GraduationCap, label: 'Research & LOR', path: '/research-student' },
+    { id: 'Explore', icon: Search, label: 'Information', path: '/explore-student' },
+    { id: 'Internship', icon: Briefcase, label: 'My Internships', path: '/internship-student' },
+    { id: 'Research', icon: GraduationCap, label: 'Bonafide Requests', path: '/bonafide-student' },
     { id: 'Profile', icon: UserCircle, label: 'Profile', path: '/profile-student' },
   ];
 

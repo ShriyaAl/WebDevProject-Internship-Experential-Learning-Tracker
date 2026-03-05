@@ -4,7 +4,6 @@ import { Route, BrowserRouter as Router, Routes, Navigate, useLocation } from 'r
 // LOGIN
 import Login from './Pages/Login';
 
-// FACULTY MODULE
 import FacultyNavbar from './Pages/Faculty/FacultyNavbar';
 import FacultyHome from './Pages/Faculty/FacultyHome';
 import StudentTracker from './Pages/Faculty/StudentTracker';
@@ -13,19 +12,10 @@ import AcademicHub from './Pages/Faculty/AcademicHub';
 import FacultyProfile from './Pages/Faculty/FacultyProfile';
 import Research from './Pages/Faculty/Research';
 
-import ManagerHome from './Pages/Manager/ManagerHome';
-import Approvals from './Pages/Manager/Approvals';
-import Evaluation from './Pages/Manager/Evaluation';
-import ManagerProfile from './Pages/Manager/ManagerProfile';
-import ManagerNavbar from './Pages/Manager/ManagerNavbar';
-
-import StudentHome from './Pages/Student/StudentHome';
 import StudentNavbar from './Pages/Student/StudentNavbar';
 import StudentExplore from './Pages/Student/StudentExplore';
-import MyApplications from './Pages/Student/MyApplications';
 import MyInternship from './Pages/Student/MyInternship';
-import ResearchLOR from './Pages/Student/ResearchLOR';
-import ProfileSkillHub from './Pages/Student/ProfileSkillHub';
+import StudentProfile from './Pages/Student/StudentProfile';
 
 
 import AdminNavbar from './Pages/Admin/AdminNavbar';
@@ -35,36 +25,31 @@ import ResearchApprovals from './Pages/Admin/ResearchApprovals';
 
 
 import './App.css'
+import Bonafide from './Pages/Student/Bonafide';
 
 
 const AppContent = () => {
   const location = useLocation();
   const path = location.pathname;
 
-  // Boolean flags for UI rendering
   const isLoginPage = path === '/login' || path === '/';
   const isFaculty = path.includes('-faculty');
   const isStudent = path.includes('-student');
-  const isManager = path.includes('-manager');
   const isAdmin = path.includes('-admin');
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
-      {/* Sidebars render only for their specific roles */}
       {isFaculty && <FacultyNavbar />}
       {isStudent && <StudentNavbar />}
-      {/* {isStudent && <StudentNavbar />}  <-- Add these as you build them */}
-      {isManager && <ManagerNavbar/>}
       {isAdmin && <AdminNavbar/>}
 
 
       <div className="flex-1 flex flex-col">
-        {/* Universal Top Header (Hidden on Login) */}
         {!isLoginPage && (
           <header className="h-16 border-b border-gray-200 bg-white flex items-center px-8 sticky top-0 z-10">
             <div className="flex justify-between items-center w-full">
               <h2 className="text-xl font-bold text-gray-800">
-                {isFaculty ? "Faculty Hub" : isStudent ? "Student Portal" : "Management System"}
+                {isFaculty ? "Internhsip In-Charge" : isStudent ? "Student Portal" : "Management System"}
               </h2>
             </div>
           </header>
@@ -87,18 +72,10 @@ const AppContent = () => {
             
 
             {/* Student */}
-            <Route path='/home-student' element={<StudentHome/>} />
             <Route path='/explore-student' element={<StudentExplore />} />
-            <Route path='/apps-student' element={<MyApplications />} />
             <Route path='/internship-student' element={<MyInternship />} />
-            <Route path='/research-student' element={<ResearchLOR />} />
-            <Route path='/profile-student' element={<ProfileSkillHub />} />
-            
-            {/* Manager */}
-            <Route path='/home-manager' element={<ManagerHome/>} />
-            <Route path='/approvals-manager' element={<Approvals/>} />
-            <Route path='/evaluations-manager' element={<Evaluation/>} />
-            <Route path='/profile-manager' element={<ManagerProfile/>} />
+            <Route path='/bonafide-student' element={<Bonafide />} />
+            <Route path='/profile-student' element={<StudentProfile />} />
 
             {/* Admin */}
             <Route path='/home-admin' element={<AdminDashboard/>} />
@@ -111,7 +88,6 @@ const AppContent = () => {
   );
 };
 
-// Main App Component
 const App = () => {
   return (
     <Router>
