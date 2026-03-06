@@ -14,10 +14,10 @@ const Login = () => {
         navigate('/explore-student'); 
         break;
       case 'faculty':
-        navigate('/faculty-portal'); 
+        navigate('/home-faculty'); 
         break;
       case 'admin':
-        navigate('/admin-control'); 
+        navigate('/home-admin'); 
         break;
       default:
         navigate('/'); 

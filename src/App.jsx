@@ -6,11 +6,11 @@ import Login from './Pages/Login';
 
 import FacultyNavbar from './Pages/Faculty/FacultyNavbar';
 import FacultyHome from './Pages/Faculty/FacultyHome';
-import StudentTracker from './Pages/Faculty/StudentTracker';
+import OdRequests from './Pages/Faculty/OdRequests';
 import FacultyInsights from './Pages/Faculty/FacultyInsights';
-import AcademicHub from './Pages/Faculty/AcademicHub';
+import BonafideRequests from './Pages/Faculty/BonafideRequests';
 import FacultyProfile from './Pages/Faculty/FacultyProfile';
-import Research from './Pages/Faculty/Research';
+import DocumentVerification from './Pages/Faculty/DocumentVerification';
 
 import StudentNavbar from './Pages/Student/StudentNavbar';
 import StudentExplore from './Pages/Student/StudentExplore';
@@ -19,9 +19,8 @@ import StudentProfile from './Pages/Student/StudentProfile';
 
 
 import AdminNavbar from './Pages/Admin/AdminNavbar';
-import AdminDashboard from './Pages/Admin/AdminDashboard';
+import AdminAnalytics from './Pages/Admin/AdminAnalytics';
 import UserManagement from './Pages/Admin/UserManagement';
-import ResearchApprovals from './Pages/Admin/ResearchApprovals';
 
 
 import './App.css'
@@ -64,9 +63,9 @@ const AppContent = () => {
 
             {/* Faculty (Flat Routes) */}
             <Route path='/home-faculty' element={<FacultyHome />} />
-            <Route path='/tracker-faculty' element={<StudentTracker />} />
-            <Route path='/academic-faculty' element={<AcademicHub />} />
-            <Route path='/research-faculty' element={<Research />} />
+            <Route path='/od-faculty' element={<OdRequests />} />
+            <Route path='/bonafide-faculty' element={<BonafideRequests />} />
+            <Route path='/document-faculty' element={<DocumentVerification />} />
             <Route path='/insights-faculty' element={<FacultyInsights />} />
             <Route path='/profile-faculty' element={<FacultyProfile />} />
             
@@ -78,9 +77,8 @@ const AppContent = () => {
             <Route path='/profile-student' element={<StudentProfile />} />
 
             {/* Admin */}
-            <Route path='/home-admin' element={<AdminDashboard/>} />
+            <Route path='/insights-admin' element={<AdminAnalytics/>} />
             <Route path='/users-admin' element={<UserManagement/>} />
-            <Route path='/approvals-admin' element={<ResearchApprovals/>} />
           </Routes>
         </main>
       </div>

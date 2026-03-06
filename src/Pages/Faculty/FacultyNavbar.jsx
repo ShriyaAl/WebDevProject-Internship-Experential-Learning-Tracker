@@ -33,9 +33,9 @@ const FacultyNavbar = () => {
       {/* Navigation Links */}
       <nav className="flex-1 px-3 py-6 space-y-2">
         <NavItem to="/home-faculty" icon={<LayoutDashboard size={22} />} label="Home" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
-        <NavItem to="/tracker-faculty" icon={<Users size={22} />} label="Student Tracker" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
-        <NavItem to="/academic-faculty" icon={<GraduationCap size={22} />} label="Academic Hub" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
-        <NavItem to="/research-faculty" icon={<Search size={22} />} label="Research & LOR" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
+        <NavItem to="/od-faculty" icon={<Users size={22} />} label="OD Requests" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
+        <NavItem to="/bonafide-faculty" icon={<GraduationCap size={22} />} label="Bonafide Requests" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
+        <NavItem to="/document-faculty" icon={<Search size={22} />} label="Document Verification" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
         <NavItem to="/insights-faculty" icon={<BarChart3 size={22} />} label="Insights" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
         <NavItem to="/profile-faculty" icon={<UserCircle size={22} />} label="Profile" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
       </nav>
