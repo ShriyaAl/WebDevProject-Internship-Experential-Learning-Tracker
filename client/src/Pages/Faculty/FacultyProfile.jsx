@@ -43,4 +43,3 @@ const FacultyProfile = () => {
 };
 
 export default FacultyProfile;
-

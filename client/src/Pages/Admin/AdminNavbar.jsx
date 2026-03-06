@@ -40,17 +40,12 @@ const AdminNavbar = () => {
         </button>
       </div>
 
-      {/* Navigation Links */}
       <nav className="flex-1 px-3 py-6 space-y-2">
         {/* Dashboard */}
-        <NavItem to="/home-admin" icon={<LayoutDashboard size={22} />} label="System Overview" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
+        <NavItem to="/insights-admin" icon={<LayoutDashboard size={22} />} label="Analytics" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
         
-        {/* User Management */}
         <NavItem to="/users-admin" icon={<Users size={22} />} label="User Management" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
-        
-        {/* Research Approvals (The critical bridge) */}
-        <NavItem to="/approvals-admin" icon={<ClipboardList size={22} />} label="Research Requests" isCollapsed={isCollapsed} classNameFunc={navItemClass} />
-        
+              
       </nav>
 
       {/* Footer / Logout */}
