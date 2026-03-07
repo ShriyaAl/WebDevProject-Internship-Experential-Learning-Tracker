@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Feedback Management</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+
+<h1 class="text-center mb-4">Internship Feedback</h1>
+
+
+<div class="card p-4 shadow mb-4">
+
+<h4>Add Feedback</h4>
+
+<form action="/add_feedback" method="POST">
+
+<div class="mb-3">
+<label class="form-label">Student Name</label>
+<input type="text" name="student" class="form-control" required>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Mentor Name</label>
+<input type="text" name="mentor" class="form-control" required>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Rating</label>
+<input type="number" name="rating" min="1" max="5" class="form-control">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Comments</label>
+<textarea name="comments" class="form-control"></textarea>
+</div>
+
+<button type="submit" class="btn btn-warning">Submit Feedback</button>
+
+</form>
+
+</div>
+
+
+<div class="card p-4 shadow">
+
+<h4>Feedback Records</h4>
+
+<table class="table table-bordered table-striped">
+
+<tr>
+<th>ID</th>
+<th>Student</th>
+<th>Mentor</th>
+<th>Rating</th>
+<th>Comments</th>
+<th>Action</th>
+</tr>
+
+{% for f in feedbacks %}
+
+<tr>
+
+<td>{{ f.id }}</td>
+<td>{{ f.student }}</td>
+<td>{{ f.mentor }}</td>
+<td>{{ f.rating }}</td>
+<td>{{ f.comments }}</td>
+
+<td>
+<a href="/delete_feedback/{{ f.id }}" class="btn btn-danger btn-sm">Delete</a>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+<br>
+
+<a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+
+</div>
+
+</body>
+</html>
