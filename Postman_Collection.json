@@ -1,0 +1,632 @@
+{
+    "info": {
+        "_postman_id": "4b5d6f1a-2e3b-4cd5-a6e7-123456789abc",
+        "name": "Internship Portal Automation",
+        "description": "Automates the entire backend flow: Registration, Setting up a Profile, Creating Requests, and Incharge Approvals.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. [Student] Register",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var response = pm.response.json();",
+                            "pm.test('Student registered successfully', function() {",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.environment.set('student_user_id', response.data.id);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            "pm.environment.set('student_email', 'automated_student_' + Date.now() + '@example.com');"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"{{student_email}}\",\n    \"password\": \"TestPassword123!\",\n    \"role\": \"STUDENT\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/auth/register",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "auth",
+                        "register"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "2. [Student] Login & Save Token",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var response = pm.response.json();",
+                            "if(response.success && response.data.session) {",
+                            "    pm.environment.set('student_token', response.data.session.access_token);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"{{student_email}}\",\n    \"password\": \"TestPassword123!\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "auth",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "3. [Student] Upsert Profile",
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{student_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"reg_no\": \"REG-{{$randomInt}}\",\n    \"full_name\": \"John Doe {{$randomInt}}\",\n    \"dept\": \"IT\",\n    \"year\": 3,\n    \"phone\": \"9876543210\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/students/profile",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "students",
+                        "profile"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "4. [Student] Create Internship",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var response = pm.response.json();",
+                            "if(response.success) {",
+                            "    pm.environment.set('internship_id', response.data.id);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{student_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"company_name\": \"Tech Solutions Inc\",\n    \"role_title\": \"Software Engineering Intern\",\n    \"expected_start_date\": \"2026-06-01\",\n    \"expected_end_date\": \"2026-08-31\",\n    \"stipend\": \"$1000/mo\",\n    \"location\": \"New York\",\n    \"mode\": \"REMOTE\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/internships",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "internships"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "5. [Student] Get Request Types (Fetch Bonafide ID)",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var response = pm.response.json();",
+                            "if(response.success) {",
+                            "    var bonafide = response.data.find(t => t.code === 'BONAFIDE');",
+                            "    if(bonafide) {",
+                            "        pm.environment.set('request_type_id', bonafide.id);",
+                            "    }",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{student_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/requests/types/all",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "requests",
+                        "types",
+                        "all"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "6. [Student] Submit Bonafide Request",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var response = pm.response.json();",
+                            "if(response.success) {",
+                            "    pm.environment.set('document_request_id', response.data.id);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{student_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"internship_id\": \"{{internship_id}}\",\n    \"request_type_id\": \"{{request_type_id}}\",\n    \"payload_json\": {\n        \"purpose\": \"Required for College Credit Transfer\"\n    },\n    \"student_note\": \"Please review this quickly if possible!\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/requests",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "requests"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "7. [Incharge] Register",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var response = pm.response.json();",
+                            "pm.test('Incharge registered successfully', function() {",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.environment.set('incharge_user_id', response.data.id);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                },
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            "pm.environment.set('incharge_email', 'automated_incharge_' + Date.now() + '@example.com');"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"{{incharge_email}}\",\n    \"password\": \"TestPassword123!\",\n    \"role\": \"INCHARGE\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/auth/register",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "auth",
+                        "register"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "8. [Incharge] Login & Save Token",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var response = pm.response.json();",
+                            "if(response.success && response.data.session) {",
+                            "    pm.environment.set('incharge_token', response.data.session.access_token);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"{{incharge_email}}\",\n    \"password\": \"TestPassword123!\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "auth",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "8.5 [Incharge] Upsert Profile",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "var response = pm.response.json();",
+                            "pm.test('Incharge profile created successfully', function() {",
+                            "    pm.expect(response.success).to.be.true;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{incharge_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"full_name\": \"Dr. Incharge Auto\",\n    \"designation\": \"Faculty Coordinator\",\n    \"phone\": \"9000000001\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/incharge/profile",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "incharge",
+                        "profile"
+                    ]
+                }
+            }
+        },
+        {
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{incharge_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/incharge/dashboard?status=PENDING",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "incharge",
+                        "dashboard"
+                    ],
+                    "query": [
+                        {
+                            "key": "status",
+                            "value": "PENDING"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "10. [Incharge] Put Request ON_HOLD",
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{incharge_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"status\": \"ON_HOLD\",\n    \"incharge_comment\": \"Please clearly state the exact start and end dates inside the purpose field instead.\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/incharge/requests/{{document_request_id}}/status",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "incharge",
+                        "requests",
+                        "{{document_request_id}}",
+                        "status"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "11. [Student] Resubmit Request",
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{student_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"payload_json\": {\n        \"purpose\": \"Required for College Credit Transfer. Exact dates: June 1 2026 to August 31 2026\"\n    },\n    \"student_note\": \"I have updated the purpose with the exact dates as requested.\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/requests/{{document_request_id}}/resubmit",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "requests",
+                        "{{document_request_id}}",
+                        "resubmit"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "12. [Incharge] View Details & Submission History",
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{incharge_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/requests/{{document_request_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "requests",
+                        "{{document_request_id}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "13. [Incharge] Approve Request",
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{incharge_token}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"status\": \"APPROVED\",\n    \"incharge_comment\": \"Looks good. Approved.\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/incharge/requests/{{document_request_id}}/status",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "incharge",
+                        "requests",
+                        "{{document_request_id}}",
+                        "status"
+                    ]
+                }
+            }
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:5001",
+            "type": "string"
+        }
+    ]
+}
