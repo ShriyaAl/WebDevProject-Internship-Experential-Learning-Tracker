@@ -26,6 +26,11 @@ import UserManagement from './Pages/Admin/UserManagement';
 import './App.css'
 import Bonafide from './Pages/Student/Bonafide';
 
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('access_token');
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+};
 
 const AppContent = () => {
   const location = useLocation();
@@ -62,19 +67,19 @@ const AppContent = () => {
             <Route path="/login" element={<Login />} />
 
             {/* Faculty (Flat Routes) */}
-            <Route path='/home-faculty' element={<FacultyHome />} />
-            <Route path='/od-faculty' element={<OdRequests />} />
-            <Route path='/bonafide-faculty' element={<BonafideRequests />} />
-            <Route path='/document-faculty' element={<DocumentVerification />} />
-            <Route path='/insights-faculty' element={<FacultyInsights />} />
-            <Route path='/profile-faculty' element={<FacultyProfile />} />
+            <Route path='/home-faculty' element={<ProtectedRoute><FacultyHome /></ProtectedRoute>} />
+            <Route path='/od-faculty' element={<ProtectedRoute><OdRequests /></ProtectedRoute>} />
+            <Route path='/bonafide-faculty' element={<ProtectedRoute><BonafideRequests /></ProtectedRoute>} />
+            <Route path='/document-faculty' element={<ProtectedRoute><DocumentVerification /></ProtectedRoute>} />
+            <Route path='/insights-faculty' element={<ProtectedRoute><FacultyInsights /></ProtectedRoute>} />
+            <Route path='/profile-faculty' element={<ProtectedRoute><FacultyProfile /></ProtectedRoute>} />
             
 
             {/* Student */}
-            <Route path='/explore-student' element={<StudentExplore />} />
-            <Route path='/internship-student' element={<MyInternship />} />
-            <Route path='/bonafide-student' element={<Bonafide />} />
-            <Route path='/profile-student' element={<StudentProfile />} />
+            <Route path='/explore-student' element={<ProtectedRoute><StudentExplore /></ProtectedRoute>} />
+            <Route path='/internship-student' element={<ProtectedRoute><MyInternship /></ProtectedRoute>} />
+            <Route path='/bonafide-student' element={<ProtectedRoute><Bonafide /></ProtectedRoute>} />
+            <Route path='/profile-student' element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
 
             {/* Admin */}
             <Route path='/insights-admin' element={<AdminAnalytics/>} />
