@@ -27,11 +27,11 @@ You are modifying an **existing React frontend** to connect it to a **fully buil
             │   └── StudentNavbar.jsx    (do not modify)
             ├── Faculty/
             │   ├── FacultyHome.jsx      → /home-faculty
-            │   ├── StudentTracker.jsx   → /tracker-faculty
+            │   ├── OdRequests.jsx       → /od-faculty
+            │   ├── BonafideRequests.jsx → /bonafide-faculty
+            │   ├── DocumentVerification.jsx → /document-faculty
+            │   ├── FacultyInsights.jsx  → /insights-faculty
             │   ├── FacultyProfile.jsx   → /profile-faculty
-            │   ├── FacultyInsights.jsx  (lower priority)
-            │   ├── AcademicHub.jsx      (skip — no backend)
-            │   ├── Research.jsx         (skip — no backend)
             │   └── FacultyNavbar.jsx    (do not modify)
             └── Admin/
                 └── (skip — no backend implemented for admin)
@@ -287,8 +287,9 @@ When user clicks "Resubmit" on an ON_HOLD request:
    - "Expiring Internships" → count of requests with `expected_end_date` within 7 days (or just use `metrics.on_hold` as a proxy if the internship date calculation is complex)
    - "Active Students" → `metrics.total` (or `data.length`)
 3. Replace the "Recent Activity" feed with real recent requests from `data` (show last 4). Each item: student name, request type, company, created_at.
-4. Each activity item's "Review" button should navigate to `/tracker-faculty` passing the request `id` (use React Router's `useNavigate` with state: `navigate('/tracker-faculty', { state: { requestId: req.id } })`).
+4. Each activity item's "Review" button should navigate passing the request `id` (use React Router's `useNavigate` with state: `navigate('/document-faculty', { state: { requestId: req.id } })`). *Note: for specific types you could route to `/od-faculty` or `/bonafide-faculty` based on `req.request_types.name`, but routing to `/document-faculty` as a master list is also fine.*
 5. Add a status filter — replace the "Quick Actions" sidebar with tab buttons (ALL / PENDING / ON_HOLD / APPROVED) that re-fetch from `GET /api/incharge/dashboard?status=<STATUS>`.
+6. **Update Links**: Update the static links in `FacultyHome.jsx` to point to the correct routes. For example, change "Intern Tracker" to "Document Verification" (`/document-faculty`), "LOR Requests" to "Bonafide Requests" (`/bonafide-faculty`), and "Credit Mapper" to "OD Requests" (`/od-faculty`).
 
 **Check if incharge profile exists on mount** — call `GET /api/auth/me`. If the incharge has never set up their profile, show a dismissible banner: "Complete your profile to start reviewing requests" with a link to `/profile-faculty`.
 
@@ -296,30 +297,34 @@ When user clicks "Resubmit" on an ON_HOLD request:
 
 ---
 
-### 3.6 `StudentTracker.jsx` (currently: hardcoded table of students, slide-over with mock data)
+### 3.6 `DocumentVerification.jsx`, `OdRequests.jsx`, and `BonafideRequests.jsx`
 
-**Current state**: Shows a table with hardcoded student rows (Amit Kumar × 5). Has a slide-over "Internship Dossier" panel that shows mock skills, ratings, and documents. Has "Approve Portfolio" and ping buttons.
+**Current state**: These are currently empty or completely new placeholder files that replace the single `StudentTracker.jsx` concept. 
 
 **Integration requirements**:
-1. On mount: call `GET /api/incharge/dashboard?status=ALL` to get all requests for the table.
-2. Replace table rows with real data. Map:
+Since the frontend structure split the tracker into three routing pages (`/document-faculty`, `/od-faculty`, `/bonafide-faculty`), you need to build a single robust Review/Tracker Table UI (or reuse components) across these three pages, or have `DocumentVerification.jsx` act as the main master list for all requests, while `OdRequests` and `BonafideRequests` filter for specific request types.
+
+1. On mount: call `GET /api/incharge/dashboard?status=ALL` to get all requests for the table. *(Filter `data` on the frontend depending on which page we are on: e.g., `requests.filter(req => req.request_types.name.includes('OD'))` for `OdRequests.jsx`)*.
+2. Build a table list UI mapping:
    - Student & ID → `student_profiles.full_name` + `student_profiles.reg_no`
    - Company & Role → `internships.company_name` + `internships.role_title`
-   - "Primary Skills" column → replace with **Status** badge (PENDING/ON_HOLD/APPROVED/REJECTED) using colored `<span>` tags
-3. The "Eye" button: fetch `GET /api/requests/:id` and set as `selectedStudent` (rename conceptually to `selectedRequest`). The slide-over shows the full request detail.
-4. In the slide-over, replace mock content with real data:
+   - "Status" column → Status badge (PENDING/ON_HOLD/APPROVED/REJECTED) using colored `<span>` tags.
+   - "Type" column → `request_types.name`
+   - "Action" button → "Review" button to open the details slide-over or modal.
+3. The "Review / Eye" button: fetch `GET /api/requests/:id` and set as `selectedRequest`. The slide-over shows the full request detail.
+4. In the slide-over, display real data:
    - Header: student `full_name`, `reg_no`, `dept`, year
-   - Body: request type name, internship company + role, latest `payload_json` shown as key-value pairs
-   - Replace "Core Tech Stack" section with "Request Details" (payload fields)
-   - Replace "Weekly Reports / Manager Rating" cards with "Status History" (from `request_status_history`)
-   - Replace "Timeline & Docs" with "Submission History" (from `request_submissions`)
-5. Replace "Approve Portfolio" button with three action buttons: **Approve** (green), **On Hold** (orange), **Reject** (red).
+   - Body: request type name, internship company + role, latest `payload_json` shown as key-value pairs (these are the dynamic form fields submitted by the student).
+   - Show "Status History" (from `request_status_history`).
+   - Show "Submission History" / Timeline (from `request_submissions`).
+5. Include three action buttons: **Approve** (green), **On Hold** (orange), **Reject** (red).
 6. Clicking any action button: show a small inline textarea for `incharge_comment`, then on confirm call `PUT /api/incharge/requests/:id/status` with `{ status: 'APPROVED'|'ON_HOLD'|'REJECTED', incharge_comment }`.
-7. On success: close slide-over, show a success message, refresh the table.
-8. Remove the ping/Send button or keep it decorative.
+7. On success: close slide-over, show a success message, refresh the table by re-fetching.
+
+*Tip: You can build a shared `RequestsTable` component or a `RequestDetailSlideOver` component to keep these three page files DRY!*
 
 **APIs**:
-- `GET /api/incharge/dashboard?status=ALL` (for table)
+- `GET /api/incharge/dashboard?status=ALL` (for table data list)
 - `GET /api/requests/:id` (for slide-over detail)
 - `PUT /api/incharge/requests/:id/status` (body: `{ status, incharge_comment }`)
 

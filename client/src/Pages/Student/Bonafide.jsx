@@ -41,7 +41,7 @@
 //   return (
 //     <div className="min-h-screen bg-[#F8FAFC] p-8 lg:p-12">
 //       <div className="max-w-5xl mx-auto">
-        
+
 //         {/* Header */}
 //         <header className="flex justify-between items-end mb-10">
 //           <div>
@@ -61,7 +61,7 @@
 //           {requests.map((req) => (
 //             <div key={req.id} className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md transition-all">
 //               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                
+
 //                 {/* Left Side: Info */}
 //                 <div className="flex items-center gap-4">
 //                   <div className={`p-3 rounded-2xl ${
@@ -77,7 +77,7 @@
 
 //                 {/* Right Side: Download (Now on Left of Timeline) + Stepper */}
 //                 <div className="flex items-center gap-8">
-                  
+
 //                   {/* Download Button - Positioned before the timeline */}
 //                   <div className="w-32 flex justify-end">
 //                     {req.status === 'Approved' ? (
@@ -194,9 +194,9 @@
 // );
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Calendar, FileText, Send, 
-  Clock, CheckCircle2, XCircle, ChevronRight, 
+import {
+  Plus, Calendar, FileText, Send,
+  Clock, CheckCircle2, XCircle, ChevronRight,
   X, AlertCircle, Download, RefreshCcw, Loader2
 } from 'lucide-react';
 
@@ -210,7 +210,7 @@ export default function Bonafide() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isResubmitMode, setIsResubmitMode] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
-  
+
   const [selectedInternshipId, setSelectedInternshipId] = useState('');
   const [selectedTypeId, setSelectedTypeId] = useState('');
   const [payloadJson, setPayloadJson] = useState({});
@@ -246,12 +246,12 @@ export default function Bonafide() {
   // --- 2. Handle POST (New) / PUT (Resubmit) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = isResubmitMode 
+    const url = isResubmitMode
       ? `${API_BASE}/api/requests/${selectedRequestId}/resubmit`
       : `${API_BASE}/api/requests`;
-    
+
     const method = isResubmitMode ? 'PUT' : 'POST';
-    const body = isResubmitMode 
+    const body = isResubmitMode
       ? { payload_json: payloadJson, student_note: studentNote }
       : { internship_id: selectedInternshipId, request_type_id: selectedTypeId, payload_json: payloadJson, student_note: studentNote };
 
@@ -262,12 +262,18 @@ export default function Bonafide() {
         body: JSON.stringify(body)
       });
       const result = await res.json();
-      
+
       if (result.success) {
         if (isResubmitMode) {
-          setRequests(requests.map(r => r.id === selectedRequestId ? result.data : r));
+          setRequests(requests.map(r =>
+            r.id === selectedRequestId ? { ...r, ...result.data } : r
+          ));
         } else {
-          setRequests([result.data, ...requests]);
+          setRequests([{
+            ...result.data,
+            request_types: requestTypes.find(t => t.id === selectedTypeId),
+            internships: myInternships.find(i => i.id === selectedInternshipId)
+          }, ...requests]);
         }
         closeModal();
       }
@@ -280,7 +286,7 @@ export default function Bonafide() {
     setSelectedRequestId(req.id);
     setIsResubmitMode(true);
     setInchargeComment(req.incharge_comment);
-    
+
     // Fetch latest submission to populate fields
     const res = await fetch(`${API_BASE}/api/requests/${req.id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
