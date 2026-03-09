@@ -195,27 +195,28 @@ const ProtectedRoute = ({ children }) => {
 **Integration requirements**:
 1. On mount: call `GET /api/internships/my` and populate the `internships` state.
 2. Update form fields to match the backend schema. Replace `company/role/duration` form with:
-   - `company_name` (required), `role_title` (required), `expected_start_date` (date, required), `expected_end_date` (date, required), `mode` (select: ONSITE/REMOTE/HYBRID, required), `location` (text), `stipend` (text), `company_linkedin` (url), `offer_letter_url` (handled via file upload — see below).
+   - `company_name` (required), `role_title` (required), `expected_start_date` (date, required), `expected_end_date` (date, required), `mode` (select: ONSITE/REMOTE/HYBRID, required), `location` (text), `stipend` (text), `company_linkedin` (url), `supporting_documents` (array of objects with `name` and `url`).
 3. On "Confirm & Add" submit: call `POST /api/internships` with form data. On success, append the returned object to `internships` state.
-4. In the internship detail slide-over (`selectedIntern`), display real fields: `company_name`, `role_title`, `expected_start_date`, `expected_end_date`, `mode`, `location`, `stipend`.
+4. In the internship detail slide-over (`selectedIntern`), display real fields: `company_name`, `role_title`, `expected_start_date`, `expected_end_date`, `mode`, `location`, `stipend`, and `verification_status`.
 5. Add a **"Request Document"** button in the slide-over that navigates to `/bonafide-student`.
 
-**Offer Letter file upload** (replace the decorative `UploadZone` for "Signed Offer Letter"):
+**Supporting Documents file upload** (allow multiple documents):
 ```javascript
-// In the form, add this for the offer letter:
-const handleOfferLetterUpload = async (file) => {
+// In the form, add this for uploading documents:
+const handleDocumentUpload = async (file, documentName) => {
   const userId = JSON.parse(localStorage.getItem('user')).id;
-  const path = `offer-letters/${userId}/${Date.now()}_${file.name}`;
+  const path = `supporting-docs/${userId}/${Date.now()}_${file.name}`;
   const { error } = await supabase.storage.from('documents').upload(path, file, { upsert: true });
   if (error) throw error;
   const { data } = supabase.storage.from('documents').getPublicUrl(path);
-  return data.publicUrl; // Store this in formData.offer_letter_url
+  // Store this in formData.supporting_documents array as { name: documentName, url: data.publicUrl }
+  return data.publicUrl; 
 };
 ```
 
 **APIs**:
-- `GET /api/internships/my` → `{ success, data: [{ id, company_name, role_title, expected_start_date, expected_end_date, mode, location, stipend, offer_letter_url, created_at }] }`
-- `POST /api/internships` → body: `{ company_name, role_title, expected_start_date, expected_end_date, mode, location, stipend, company_linkedin, offer_letter_url }`
+- `GET /api/internships/my` → `{ success, data: [{ id, company_name, role_title, expected_start_date, expected_end_date, mode, location, stipend, verification_status, supporting_documents: [{name, url}], created_at }] }`
+- `POST /api/internships` → body: `{ company_name, role_title, expected_start_date, expected_end_date, mode, location, stipend, company_linkedin, supporting_documents: [{name, url}] }`
 
 ---
 
@@ -291,8 +292,6 @@ When user clicks "Resubmit" on an ON_HOLD request:
 5. Add a status filter — replace the "Quick Actions" sidebar with tab buttons (ALL / PENDING / ON_HOLD / APPROVED) that re-fetch from `GET /api/incharge/dashboard?status=<STATUS>`.
 6. **Update Links**: Update the static links in `FacultyHome.jsx` to point to the correct routes. For example, change "Intern Tracker" to "Document Verification" (`/document-faculty`), "LOR Requests" to "Bonafide Requests" (`/bonafide-faculty`), and "Credit Mapper" to "OD Requests" (`/od-faculty`).
 
-**Check if incharge profile exists on mount** — call `GET /api/auth/me`. If the incharge has never set up their profile, show a dismissible banner: "Complete your profile to start reviewing requests" with a link to `/profile-faculty`.
-
 **API**: `GET /api/incharge/dashboard?status=PENDING` → `{ success, metrics: { total, pending, approved, on_hold }, data: [{ id, status, created_at, request_types: { name, code }, internships: { company_name, role_title }, student_profiles: { full_name, reg_no, dept, year } }] }`
 
 ---
@@ -302,7 +301,9 @@ When user clicks "Resubmit" on an ON_HOLD request:
 **Current state**: These are currently empty or completely new placeholder files that replace the single `StudentTracker.jsx` concept. 
 
 **Integration requirements**:
-Since the frontend structure split the tracker into three routing pages (`/document-faculty`, `/od-faculty`, `/bonafide-faculty`), you need to build a single robust Review/Tracker Table UI (or reuse components) across these three pages, or have `DocumentVerification.jsx` act as the main master list for all requests, while `OdRequests` and `BonafideRequests` filter for specific request types.
+Since the frontend structure split the tracker into three routing pages (`/document-faculty`, `/od-faculty`, `/bonafide-faculty`):
+- `DocumentVerification.jsx` now acts as the master list for **Internship Verification**. It fetches all internships (`GET /api/incharge/internships`) to verify multi-document uploads for internships.
+- `OdRequests.jsx` and `BonafideRequests.jsx` filter document/leave requests fetching from `GET /api/incharge/dashboard?status=ALL`.
 
 1. On mount: call `GET /api/incharge/dashboard?status=ALL` to get all requests for the table. *(Filter `data` on the frontend depending on which page we are on: e.g., `requests.filter(req => req.request_types.name.includes('OD'))` for `OdRequests.jsx`)*.
 2. Build a table list UI mapping:
@@ -321,7 +322,9 @@ Since the frontend structure split the tracker into three routing pages (`/docum
 6. Clicking any action button: show a small inline textarea for `incharge_comment`, then on confirm call `PUT /api/incharge/requests/:id/status` with `{ status: 'APPROVED'|'ON_HOLD'|'REJECTED', incharge_comment }`.
 7. On success: close slide-over, show a success message, refresh the table by re-fetching.
 
-*Tip: You can build a shared `RequestsTable` component or a `RequestDetailSlideOver` component to keep these three page files DRY!*
+7. On success: close slide-over, show a success message, refresh the table by re-fetching.
+
+*Tip: You can build shared components for requests (`RequestsTable`, `RequestSlideOver`) and separate ones for internships (`InternshipsTable`, `InternshipSlideOver`) to keep the page files DRY!*
 
 **APIs**:
 - `GET /api/incharge/dashboard?status=ALL` (for table data list)
@@ -414,5 +417,4 @@ Add a global fetch error interceptor pattern — in every `try/catch`, if error 
 1. **Route `/my` vs `/:id`** — `GET /api/requests/my` must be registered BEFORE `GET /api/requests/:id` in the backend router (already done). Just ensure you call the right endpoint.
 2. **Dynamic forms** — The `form_schema_json.fields` array from `GET /api/requests/types/all` is the single source of truth for what inputs to render. Field `type` values are `"text"` or `"number"` — map directly to HTML `<input type={field.type}>`.
 3. **Supabase Storage** — Before file uploads work, the project owner must create a public bucket named `documents` in the Supabase Dashboard → Storage.
-4. **First-time Incharge** — An incharge must call `POST /api/incharge/profile` at least once before they can approve/reject requests (FK constraint). Show a banner/prompt on `/home-faculty` if profile is not yet completed.
-5. **Token expiry** — Supabase JWTs expire after 1 hour. If a 401 is received mid-session, clear local storage and redirect to login. For production, implement token refresh using `supabase.auth.refreshSession()`.
+4. **Token expiry** — Supabase JWTs expire after 1 hour. If a 401 is received mid-session, clear local storage and redirect to login. For production, implement token refresh using `supabase.auth.refreshSession()`.
