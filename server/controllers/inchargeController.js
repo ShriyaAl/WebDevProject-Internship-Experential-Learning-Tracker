@@ -141,3 +141,69 @@ exports.updateRequestStatus = async (req, res) => {
         res.status(500).json({ success: false, error: 'Server Error' });
     }
 }
+
+// @desc    Get all internships for verification
+// @route   GET /api/incharge/internships
+// @access  Private (Incharge Only)
+exports.getInternships = async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('internships')
+            .select(`
+                *,
+                student_profiles (
+                    full_name, reg_no, dept, year
+                )
+            `)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            return res.status(400).json({ success: false, error: error.message });
+        }
+
+        res.status(200).json({ success: true, count: data.length, data });
+    } catch (err) {
+        console.error('Get Internships Error:', err);
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
+
+// @desc    Verify or Reject an internship document submission
+// @route   PUT /api/incharge/internships/:id/verify
+// @access  Private (Incharge Only)
+exports.verifyInternship = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { verification_status } = req.body;
+        const userId = req.user.id; // The Incharge ID
+
+        if (!['VERIFIED', 'REJECTED', 'PENDING'].includes(verification_status)) {
+            return res.status(400).json({ success: false, error: 'Invalid verification status' });
+        }
+
+        // Update the internship
+        const { data: updatedInternship, error } = await supabase
+            .from('internships')
+            .update({ verification_status })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            return res.status(400).json({ success: false, error: error.message });
+        }
+
+        // Log the activity
+        await supabase.from('activity_logs').insert([{
+            actor_user_id: userId,
+            action: `INTERNSHIP_${verification_status}`,
+            entity_type: 'internship',
+            entity_id: id
+        }]);
+
+        res.status(200).json({ success: true, data: updatedInternship });
+    } catch (err) {
+        console.error('Verify Internship Error:', err);
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};

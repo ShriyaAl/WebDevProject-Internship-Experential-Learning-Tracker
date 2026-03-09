@@ -5,7 +5,7 @@ const supabase = require('../config/db');
 // @access  Private (Student Only)
 exports.createInternship = async (req, res) => {
     try {
-        const { company_name, company_linkedin, role_title, expected_start_date, expected_end_date, stipend, location, mode, offer_letter_url } = req.body;
+        const { company_name, company_linkedin, role_title, expected_start_date, expected_end_date, stipend, location, mode, supporting_documents } = req.body;
         const userId = req.user.id; // From auth middleware
 
         if (!company_name || !role_title) {
@@ -26,7 +26,7 @@ exports.createInternship = async (req, res) => {
                     stipend,
                     location,
                     mode,
-                    offer_letter_url
+                    supporting_documents: supporting_documents || []
                 }
             ])
             .select()
