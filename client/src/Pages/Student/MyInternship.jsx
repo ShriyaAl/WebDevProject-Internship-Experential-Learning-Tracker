@@ -332,7 +332,7 @@ import {
   ChevronDown, FileText, Eye, GraduationCap, Award, BarChart2, Zap
 } from 'lucide-react';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+
 const DOCUMENT_CATEGORIES = [
   'Offer Letter',
   'Completion Certificate',
@@ -348,7 +348,7 @@ const TECH_STACK_OPTIONS = [
   'Machine Learning', 'Data Analysis', 'Figma / Design', 'Other',
 ];
 
-// ─── Helper Components ─────────────────────────────────────────────────────────
+
 const InfoRow = ({ label, value }) => (
   <div className="mb-4">
     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
@@ -369,7 +369,7 @@ const DetailInput = ({ label, value, onChange, type = 'text', required }) => (
   </div>
 );
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+
 export default function MyInternship() {
   const navigate = useNavigate();
   const [view, setView] = useState('list'); // 'list' | 'form' | 'survey'
@@ -396,11 +396,11 @@ export default function MyInternship() {
   });
   const [documentName, setDocumentName] = useState('Offer Letter');
 
-  // Workspace add-doc state
+
   const [workspaceDocCategory, setWorkspaceDocCategory] = useState('');
   const [workspaceUploaded, setWorkspaceUploaded] = useState(false);
 
-  // Exit survey state
+
   const [survey, setSurvey] = useState({
     tech_stack: [],
     project_summary: '',
@@ -412,7 +412,6 @@ export default function MyInternship() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const token = localStorage.getItem('access_token');
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => { fetchInternships(); }, []);
 
   const fetchInternships = async () => {
@@ -429,7 +428,6 @@ export default function MyInternship() {
     }
   };
 
-  // ── Upload helper ──────────────────────────────────────────────────────────
   const uploadToSupabase = async (file) => {
     const userStr = localStorage.getItem('user');
     const userId = JSON.parse(userStr).id;
@@ -460,7 +458,6 @@ export default function MyInternship() {
     }
   };
 
-  // ── Workspace document upload ──────────────────────────────────────────────
   const handleWorkspaceUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -482,7 +479,6 @@ export default function MyInternship() {
     }
   };
 
-  // ── Submit new internship ──────────────────────────────────────────────────
   const handleAddInternship = async (e) => {
     e.preventDefault();
     const payload = {
@@ -510,12 +506,10 @@ export default function MyInternship() {
     }
   };
 
-  // ── Delete (UI-only) ───────────────────────────────────────────────────────
   const handleDelete = (id) => {
     setInternships(prev => prev.filter(i => i.id !== id));
   };
 
-  // ── Submit exit survey ─────────────────────────────────────────────────────
   const handleSurveySubmit = () => {
     const updated = { ...selectedIntern, activity_status: 'Completed', survey };
     setSelectedIntern(updated);
@@ -545,7 +539,7 @@ export default function MyInternship() {
     return !(hasOffer && hasCert && isVerified);
   };
 
-  // ── Form validation ────────────────────────────────────────────────────────
+
   const isFormValid = () => {
     const { company_name, role_title, expected_start_date, expected_end_date, mode, internship_type } = formData;
     const allFilled = company_name && role_title && expected_start_date && expected_end_date && mode && internship_type;
@@ -553,22 +547,19 @@ export default function MyInternship() {
     return allFilled && hasDocs;
   };
 
-  // ── Workspace available categories (filter already uploaded, keep Other) ───
+
   const availableWorkspaceCategories = () => {
     const uploaded = new Set((selectedIntern?.supporting_documents || []).map(d => d.name));
     return DOCUMENT_CATEGORIES.filter(c => c === 'Other' || !uploaded.has(c));
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="animate-spin text-[#0047AB]" size={32} />
     </div>
   );
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // EXIT SURVEY VIEW
-  // ══════════════════════════════════════════════════════════════════════════════
   if (view === 'survey' && selectedIntern) {
     return (
       <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -693,9 +684,6 @@ export default function MyInternship() {
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // LIST VIEW
-  // ══════════════════════════════════════════════════════════════════════════════
   if (view === 'list' && !selectedIntern) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] p-8 lg:p-12">
@@ -774,9 +762,6 @@ export default function MyInternship() {
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // DETAIL WORKSPACE
-  // ══════════════════════════════════════════════════════════════════════════════
   if (selectedIntern) {
     const locked = isCreditLocked(selectedIntern);
     const availableCats = availableWorkspaceCategories();
@@ -913,9 +898,6 @@ export default function MyInternship() {
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // ADD FORM VIEW
-  // ══════════════════════════════════════════════════════════════════════════════
   const formValid = isFormValid();
 
   return (
