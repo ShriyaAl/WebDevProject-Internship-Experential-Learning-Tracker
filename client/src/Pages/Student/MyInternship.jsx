@@ -470,7 +470,6 @@ export default function MyInternship() {
       const publicUrl = await uploadToSupabase(file);
       const newDoc = { name: workspaceDocCategory, url: publicUrl };
       const updatedDocs = [...(selectedIntern.supporting_documents || []), newDoc];
-      // Update local state (no backend change as per instructions)
       const updated = { ...selectedIntern, supporting_documents: updatedDocs };
       setSelectedIntern(updated);
       setInternships(prev => prev.map(i => i.id === updated.id ? updated : i));
