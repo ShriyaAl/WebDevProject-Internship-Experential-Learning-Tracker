@@ -188,17 +188,23 @@ const ProtectedRoute = ({ children }) => {
 
 ---
 
-### 3.3 `MyInternship.jsx` (currently: manages local `internships` array state, no backend)
+### 3.3 `MyInternship.jsx` (currently: partially integrated with backend + local-only workspace/survey state)
 
-**Current state**: Has a list view, a form view, and an internship detail slide-over. Form currently uses `company`, `role`, `duration` fields only. `UploadZone` is decorative.
+**Current state**: The page already fetches internships and creates new internship records. However, workspace document uploads and exit survey completion are still local-only in the frontend unless explicitly synced to backend using the new PATCH endpoints below.
 
 **Integration requirements**:
 1. On mount: call `GET /api/internships/my` and populate the `internships` state.
-2. Update form fields to match the backend schema. Replace `company/role/duration` form with:
-   - `company_name` (required), `role_title` (required), `expected_start_date` (date, required), `expected_end_date` (date, required), `mode` (select: ONSITE/REMOTE/HYBRID, required), `location` (text), `stipend` (text), `company_linkedin` (url), `supporting_documents` (array of objects with `name` and `url`).
+2. Internship creation form must send this backend schema:
+   - Required: `company_name`, `role_title`, `expected_start_date`, `expected_end_date`, `mode` (ONSITE/REMOTE/HYBRID), `internship_type`, `supporting_documents` (at least one `{ name, url }`).
+   - Optional: `location`, `stipend`, `company_linkedin`, `map_for_credits`, `offer_letter_received`, `reporting_authority_name`, `reporting_authority_designation`, `reporting_authority_email`, `reporting_authority_phone`.
 3. On "Confirm & Add" submit: call `POST /api/internships` with form data. On success, append the returned object to `internships` state.
-4. In the internship detail slide-over (`selectedIntern`), display real fields: `company_name`, `role_title`, `expected_start_date`, `expected_end_date`, `mode`, `location`, `stipend`, and `verification_status`.
-5. Add a **"Request Document"** button in the slide-over that navigates to `/bonafide-student`.
+4. In the internship detail slide-over (`selectedIntern`), display: `company_name`, `role_title`, `expected_start_date`, `expected_end_date`, `mode`, `location`, `stipend`, `internship_type`, `map_for_credits`, `verification_status`, and `activity_status`.
+5. Keep **"Request Document"** button in slide-over → navigate to `/bonafide-student`.
+6. Workspace upload sync: after uploading file to Supabase storage, call `PATCH /api/internships/:id/documents` with full updated `supporting_documents` array and replace local internship state with API response.
+7. Exit survey sync: on submit, call `PATCH /api/internships/:id/exit-survey` with survey payload. Backend persists `exit_survey` and sets `activity_status = 'Completed'`.
+8. Credit lock behavior: if `map_for_credits` is true, lock exit survey until supporting documents contain both "Offer Letter" and "Completion Certificate", and `verification_status === 'VERIFIED'`.
+9. Frontend naming cleanup: prefer explicit keys `reporting_authority_*` instead of legacy `reporting_xx1..4`. Backend currently supports legacy keys for compatibility, but frontend should migrate to explicit keys.
+10. Document category UX: include `"Other"` in `DOCUMENT_CATEGORIES` if "Other always visible" behavior is required.
 
 **Supporting Documents file upload** (allow multiple documents):
 ```javascript
@@ -215,8 +221,10 @@ const handleDocumentUpload = async (file, documentName) => {
 ```
 
 **APIs**:
-- `GET /api/internships/my` → `{ success, data: [{ id, company_name, role_title, expected_start_date, expected_end_date, mode, location, stipend, verification_status, supporting_documents: [{name, url}], created_at }] }`
-- `POST /api/internships` → body: `{ company_name, role_title, expected_start_date, expected_end_date, mode, location, stipend, company_linkedin, supporting_documents: [{name, url}] }`
+- `GET /api/internships/my` → `{ success, data: [{ id, company_name, company_linkedin, role_title, expected_start_date, expected_end_date, mode, location, stipend, internship_type, map_for_credits, offer_letter_received, reporting_authority_name, reporting_authority_designation, reporting_authority_email, reporting_authority_phone, verification_status, activity_status, exit_survey, supporting_documents: [{name, url}], created_at, updated_at }] }`
+- `POST /api/internships` → body: `{ company_name, role_title, expected_start_date, expected_end_date, mode, internship_type, supporting_documents: [{name, url}], location?, stipend?, company_linkedin?, map_for_credits?, offer_letter_received?, reporting_authority_name?, reporting_authority_designation?, reporting_authority_email?, reporting_authority_phone? }`
+- `PATCH /api/internships/:id/documents` → body: `{ supporting_documents: [{name, url}] }`
+- `PATCH /api/internships/:id/exit-survey` → body: `{ tech_stack: string[], project_summary: string, roles_skills: string, industry_mentors: string, learning_rating: 1..10 }`
 
 ---
 
@@ -322,8 +330,6 @@ Since the frontend structure split the tracker into three routing pages (`/docum
 6. Clicking any action button: show a small inline textarea for `incharge_comment`, then on confirm call `PUT /api/incharge/requests/:id/status` with `{ status: 'APPROVED'|'ON_HOLD'|'REJECTED', incharge_comment }`.
 7. On success: close slide-over, show a success message, refresh the table by re-fetching.
 
-7. On success: close slide-over, show a success message, refresh the table by re-fetching.
-
 *Tip: You can build shared components for requests (`RequestsTable`, `RequestSlideOver`) and separate ones for internships (`InternshipsTable`, `InternshipSlideOver`) to keep the page files DRY!*
 
 **APIs**:
@@ -367,8 +373,10 @@ Protected routes need: `Authorization: Bearer <access_token>` header
 | GET | `/api/auth/me` | Yes | Any | Get current user |
 | GET | `/api/students/profile` | Yes | STUDENT | Get own profile |
 | POST | `/api/students/profile` | Yes | STUDENT | Upsert profile |
-| POST | `/api/internships` | Yes | STUDENT | Add internship |
+| POST | `/api/internships` | Yes | STUDENT | Add internship (extended schema) |
 | GET | `/api/internships/my` | Yes | STUDENT | List own internships |
+| PATCH | `/api/internships/:id/documents` | Yes | STUDENT | Update own internship documents |
+| PATCH | `/api/internships/:id/exit-survey` | Yes | STUDENT | Submit exit survey + mark completed |
 | GET | `/api/internships/:id` | Yes | STUDENT+INCHARGE | Get one internship |
 | GET | `/api/requests/types/all` | Yes | Any | Get document types |
 | GET | `/api/requests/my` | Yes | STUDENT | **List own requests** |
@@ -377,6 +385,8 @@ Protected routes need: `Authorization: Bearer <access_token>` header
 | PUT | `/api/requests/:id/resubmit` | Yes | STUDENT | Resubmit ON_HOLD request |
 | POST | `/api/incharge/profile` | Yes | INCHARGE | Upsert incharge profile |
 | GET | `/api/incharge/dashboard` | Yes | INCHARGE | Dashboard + metrics |
+| GET | `/api/incharge/internships` | Yes | INCHARGE | Get all internships for verification |
+| PUT | `/api/incharge/internships/:id/verify` | Yes | INCHARGE | Set internship verification status |
 | PUT | `/api/incharge/requests/:id/status` | Yes | INCHARGE | Approve/Reject/Hold |
 
 ---
@@ -417,4 +427,6 @@ Add a global fetch error interceptor pattern — in every `try/catch`, if error 
 1. **Route `/my` vs `/:id`** — `GET /api/requests/my` must be registered BEFORE `GET /api/requests/:id` in the backend router (already done). Just ensure you call the right endpoint.
 2. **Dynamic forms** — The `form_schema_json.fields` array from `GET /api/requests/types/all` is the single source of truth for what inputs to render. Field `type` values are `"text"` or `"number"` — map directly to HTML `<input type={field.type}>`.
 3. **Supabase Storage** — Before file uploads work, the project owner must create a public bucket named `documents` in the Supabase Dashboard → Storage.
-4. **Token expiry** — Supabase JWTs expire after 1 hour. If a 401 is received mid-session, clear local storage and redirect to login. For production, implement token refresh using `supabase.auth.refreshSession()`.
+4. **Internship validation** — Backend enforces required internship fields (`company_name`, `role_title`, `expected_start_date`, `expected_end_date`, `mode`, `internship_type`) and at least one supporting document.
+5. **Offer letter received mapping** — Backend stores `offer_letter_received` as boolean. Frontend may send `"Yes"/"No"` or boolean values.
+6. **Token expiry** — Supabase JWTs expire after 1 hour. If a 401 is received mid-session, clear local storage and redirect to login. For production, implement token refresh using `supabase.auth.refreshSession()`.

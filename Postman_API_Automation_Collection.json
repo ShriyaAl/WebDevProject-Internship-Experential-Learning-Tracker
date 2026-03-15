@@ -1,0 +1,1076 @@
+{
+  "info": {
+    "_postman_id": "f2a0f99c-8f34-4ed3-bd1d-24c5295b8e80",
+    "name": "Internship Portal - Full API Automation",
+    "description": "End-to-end automated run for student and incharge APIs, including internship workspace and exit survey persistence endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get('base_url')) {",
+          "  pm.environment.set('base_url', 'http://localhost:5001');",
+          "}",
+          "if (!pm.environment.get('student_email')) {",
+          "  pm.environment.set('student_email', `student_${Date.now()}@example.com`);",
+          "}",
+          "if (!pm.environment.get('incharge_email')) {",
+          "  pm.environment.set('incharge_email', `incharge_${Date.now()}@example.com`);",
+          "}",
+          "if (!pm.environment.get('password')) {",
+          "  pm.environment.set('password', 'TestPassword123!');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Register Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{student_email}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"STUDENT\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Student register success', function () {",
+              "  pm.expect(pm.response.code).to.eql(201);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});",
+              "pm.environment.set('student_user_id', json.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Login Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{student_email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Student login success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.session.access_token).to.be.a('string');",
+              "});",
+              "pm.environment.set('student_token', json.data.session.access_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Student Auth Me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/auth/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Student auth/me success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.role).to.eql('STUDENT');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Upsert Student Profile",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reg_no\": \"REG-{{$timestamp}}\",\n  \"full_name\": \"Student {{$timestamp}}\",\n  \"dept\": \"IT\",\n  \"year\": 3,\n  \"gender\": \"Other\",\n  \"phone\": \"9876543210\",\n  \"linkedin_url\": \"https://linkedin.com/in/student-{{$timestamp}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/students/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "students",
+            "profile"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Upsert student profile success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Get Student Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/students/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "students",
+            "profile"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Get student profile success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Create Internship",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"company_name\": \"Tech Solutions\",\n  \"company_linkedin\": \"https://linkedin.com/company/tech-solutions\",\n  \"role_title\": \"Software Engineering Intern\",\n  \"expected_start_date\": \"2026-06-01\",\n  \"expected_end_date\": \"2026-08-31\",\n  \"mode\": \"REMOTE\",\n  \"location\": \"Chennai\",\n  \"stipend\": \"25000\",\n  \"internship_type\": \"Off Campus\",\n  \"map_for_credits\": true,\n  \"offer_letter_received\": \"Yes\",\n  \"reporting_authority_name\": \"John Manager\",\n  \"reporting_authority_designation\": \"Engineering Manager\",\n  \"reporting_authority_email\": \"john.manager@example.com\",\n  \"reporting_authority_phone\": \"9999999999\",\n  \"supporting_documents\": [\n    {\n      \"name\": \"Offer Letter\",\n      \"url\": \"https://example.com/docs/offer-letter.pdf\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/internships",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "internships"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Create internship success', function () {",
+              "  pm.expect(pm.response.code).to.eql(201);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.internship_type).to.eql('Off Campus');",
+              "});",
+              "pm.environment.set('internship_id', json.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Get My Internships",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/internships/my",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "internships",
+            "my"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Get my internships success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.length).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Get Internship By ID (Student)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/internships/{{internship_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "internships",
+            "{{internship_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Get internship by id success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Patch Internship Documents",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"supporting_documents\": [\n    {\n      \"name\": \"Offer Letter\",\n      \"url\": \"https://example.com/docs/offer-letter.pdf\"\n    },\n    {\n      \"name\": \"Completion Certificate\",\n      \"url\": \"https://example.com/docs/completion-certificate.pdf\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/internships/{{internship_id}}/documents",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "internships",
+            "{{internship_id}}",
+            "documents"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Patch internship documents success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.supporting_documents.length).to.eql(2);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Patch Exit Survey",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tech_stack\": [\"React\", \"Node.js\", \"PostgreSQL\"],\n  \"project_summary\": \"Built internship tracker modules and API integrations.\",\n  \"roles_skills\": \"Implemented UI flows, API wiring, and testing.\",\n  \"industry_mentors\": \"Engineering mentor and team lead.\",\n  \"learning_rating\": 9\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/internships/{{internship_id}}/exit-survey",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "internships",
+            "{{internship_id}}",
+            "exit-survey"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Patch exit survey success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.activity_status).to.eql('Completed');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Get Request Types",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/requests/types/all",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "types",
+            "all"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Get request types success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.length).to.be.greaterThan(0);",
+              "});",
+              "const bonafide = json.data.find(x => x.code === 'BONAFIDE') || json.data[0];",
+              "pm.environment.set('request_type_id', bonafide.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Create Document Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"internship_id\": \"{{internship_id}}\",\n  \"request_type_id\": \"{{request_type_id}}\",\n  \"payload_json\": {\n    \"purpose\": \"Need bonafide certificate for bank account\"\n  },\n  \"student_note\": \"Please process soon\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/requests",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Create request success', function () {",
+              "  pm.expect(pm.response.code).to.eql(201);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});",
+              "pm.environment.set('request_id', json.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 Get My Requests",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/requests/my",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "my"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Get my requests success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Register Incharge",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{incharge_email}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"INCHARGE\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Incharge register success', function () {",
+              "  pm.expect(pm.response.code).to.eql(201);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 Login Incharge",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{incharge_email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Incharge login success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.user.role).to.eql('INCHARGE');",
+              "});",
+              "pm.environment.set('incharge_token', json.data.session.access_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 Incharge Auth Me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/auth/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Incharge auth/me success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.role).to.eql('INCHARGE');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 Upsert Incharge Profile",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Faculty {{$timestamp}}\",\n  \"designation\": \"Professor\",\n  \"phone\": \"9000000000\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/incharge/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "incharge",
+            "profile"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Upsert incharge profile success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 Incharge Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/incharge/dashboard?status=ALL",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "incharge",
+            "dashboard"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "ALL"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Incharge dashboard success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.metrics).to.be.an('object');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 Get Request Details (Incharge)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/requests/{{request_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "{{request_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Get request details (incharge) success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 Put Request Status ON_HOLD",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"ON_HOLD\",\n  \"incharge_comment\": \"Please add corrected details and resubmit.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/incharge/requests/{{request_id}}/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "incharge",
+            "requests",
+            "{{request_id}}",
+            "status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Update request status to ON_HOLD success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.status).to.eql('ON_HOLD');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 Get Incharge Internships",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/incharge/internships",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "incharge",
+            "internships"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Get incharge internships success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(Array.isArray(json.data)).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "22 Verify Internship (VERIFIED)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"verification_status\": \"VERIFIED\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/incharge/internships/{{internship_id}}/verify",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "incharge",
+            "internships",
+            "{{internship_id}}",
+            "verify"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Verify internship success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.verification_status).to.eql('VERIFIED');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "23 Student Resubmit Request",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payload_json\": {\n    \"purpose\": \"Resubmitted with corrected details\"\n  },\n  \"student_note\": \"Updated as requested\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/requests/{{request_id}}/resubmit",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "{{request_id}}",
+            "resubmit"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Student resubmit request success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.status).to.eql('PENDING');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "24 Put Request Status APPROVED",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"APPROVED\",\n  \"incharge_comment\": \"All good. Approved.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/incharge/requests/{{request_id}}/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "incharge",
+            "requests",
+            "{{request_id}}",
+            "status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Update request status to APPROVED success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.status).to.eql('APPROVED');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
