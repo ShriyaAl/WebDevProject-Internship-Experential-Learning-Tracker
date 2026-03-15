@@ -13,7 +13,6 @@ const Login = () => {
   const [role, setRole] = useState('student');
   const navigate = useNavigate();
 
-  // 2. Integrated the Real API Call
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -34,16 +33,31 @@ const Login = () => {
         throw new Error(data.error || 'Invalid credentials');
       }
 
-      // 3. Session Storage Logic
+      // 1. Get the role from backend
+      const backendRole = data.data.user.role; // e.g., "STUDENT", "INCHARGE", "ADMIN"
+
+      // 2. Map UI Role to Backend Role for comparison
+      // UI State 'role' is currently 'student', 'faculty', or 'admin'
+      const roleMapping = {
+        student: 'STUDENT',
+        faculty: 'INCHARGE',
+        admin: 'ADMIN'
+      };
+
+      // 3. Validation Gate: Check if UI selection matches Backend data
+      if (backendRole !== roleMapping[role]) {
+        // We clear the session data if it was set (optional, depends on your API)
+        throw new Error(`Unauthorized: This account is not registered as ${role.charAt(0).toUpperCase() + role.slice(1)}.`);
+      }
+
+      // 4. If match, proceed to Session Storage
       localStorage.setItem('access_token', data.data.session.access_token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
 
-      // 4. Redirect based on API Role
-      const userRole = data.data.user.role; // e.g., "STUDENT", "INCHARGE", "ADMIN"
-      
-      if (userRole === 'STUDENT') navigate('/internship-student');
-      else if (userRole === 'INCHARGE') navigate('/home-faculty');
-      else if (userRole === 'ADMIN') navigate('/dashboard-admin');
+      // 5. Redirect
+      if (backendRole === 'STUDENT') navigate('/internship-student');
+      else if (backendRole === 'INCHARGE') navigate('/home-faculty');
+      else if (backendRole === 'ADMIN') navigate('/dashboard-admin');
       else navigate('/');
 
     } catch (err) {
