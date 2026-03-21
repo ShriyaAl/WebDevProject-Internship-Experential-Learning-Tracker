@@ -887,6 +887,14 @@ export default function MyInternship() {
     return data.publicUrl;
   };
 
+  const withTimeout = (promise, ms, message) => {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(message)), ms);
+    });
+    return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+  };
+
   // ── In-form document upload ────────────────────────────────────────────────
   const handleDocumentUpload = async (e) => {
     const file = e.target.files[0];
@@ -933,10 +941,20 @@ export default function MyInternship() {
     if (!workspaceDocCategory) { alert('Please select a document category first.'); return; }
     setWorkspaceUploading(true);
     try {
-      const publicUrl = await uploadToSupabase(file);
+      if (!selectedIntern?.id) throw new Error('No internship selected. Please reopen this workspace and try again.');
+      const publicUrl = await withTimeout(uploadToSupabase(file), 30000, 'Upload timed out. Please check your internet and try again.');
       const newDoc = { name: workspaceDocCategory, url: publicUrl };
       const updatedDocs = [...(selectedIntern.supporting_documents || []), newDoc];
-      const updated = { ...selectedIntern, supporting_documents: updatedDocs };
+      const res = await fetch(`${API_BASE}/api/internships/${selectedIntern.id}/documents`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ supporting_documents: updatedDocs }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || 'Failed to sync document with backend.');
+      }
+      const updated = result.data || { ...selectedIntern, supporting_documents: updatedDocs };
       setSelectedIntern(updated);
       setInternships(prev => prev.map(i => i.id === updated.id ? updated : i));
       setWorkspaceDocCategory('');
@@ -945,6 +963,7 @@ export default function MyInternship() {
       alert('Upload failed: ' + err.message);
     } finally {
       setWorkspaceUploading(false);
+      e.target.value = '';
     }
   };
 

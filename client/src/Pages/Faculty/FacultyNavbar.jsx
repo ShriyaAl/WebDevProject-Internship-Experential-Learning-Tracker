@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, GraduationCap, 
   Search, BarChart3, UserCircle, 
@@ -8,6 +8,13 @@ import {
 
 const FacultyNavbar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   const navItemClass = ({ isActive }) => 
     `flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200 group ${
@@ -42,7 +49,10 @@ const FacultyNavbar = () => {
 
       {/* Footer / Logout */}
       <div className="p-3 border-t border-gray-100">
-        <button className={`flex items-center w-full px-3 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+        <button
+          onClick={handleLogout}
+          className={`flex items-center w-full px-3 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all ${isCollapsed ? 'justify-center' : 'justify-between'}`}
+        >
           {!isCollapsed && <span className="font-medium text-sm">Logout</span>}
           <LogOut size={20} />
         </button>
