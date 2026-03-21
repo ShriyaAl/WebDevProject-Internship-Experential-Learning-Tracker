@@ -14,6 +14,7 @@ export default function StudentProfile() {
     full_name: "",
     dept: "",
     year: 1,
+    section: "",
     reg_no: "",
     gender: "Male",
     phone: "",
@@ -115,6 +116,7 @@ export default function StudentProfile() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-50">
               <InfoItem icon={<GraduationCap size={18} />} label="Academic Year" value={profile.year ? `Year ${profile.year}` : "N/A"} />
+              <InfoItem icon={<ShieldCheck size={18} />} label="Section" value={profile.section || "N/A"} />
               <InfoItem icon={<ShieldCheck size={18} />} label="Student ID" value={profile.reg_no || "N/A"} />
               <InfoItem icon={<Mail size={18} />} label="Email Address" value={email} />
               <InfoItem icon={<Phone size={18} />} label="Phone" value={profile.phone || "N/A"} />
@@ -151,10 +153,14 @@ export default function StudentProfile() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <ProfileInput label="Department" value={profile.dept} onChange={(v) => setProfile({...profile, dept: v})} />
+                  <ProfileInput label="Section" value={profile.section || ''} onChange={(v) => setProfile({...profile, section: v})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Academic Year</label>
                     <input type="number" min="1" max="5" value={profile.year} onChange={(e) => setProfile({...profile, year: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:border-[#0047AB]" />
                   </div>
+                  <div />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Gender</label>

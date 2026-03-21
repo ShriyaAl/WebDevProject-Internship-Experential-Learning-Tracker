@@ -1,5 +1,32 @@
 const supabase = require('../config/db');
 
+const parseStipend = (value) => {
+    if (value === null || value === undefined) return null;
+    const num = Number(String(value).replace(/[^0-9.]/g, ''));
+    return Number.isFinite(num) ? num : null;
+};
+
+const extractRegNumeric = (regNo) => {
+    if (!regNo) return null;
+    const match = String(regNo).match(/(\d+)/g);
+    if (!match) return null;
+    const merged = match.join('');
+    const n = Number(merged);
+    return Number.isFinite(n) ? n : null;
+};
+
+const includesAnyTech = (exitSurvey, techFilter) => {
+    if (!techFilter) return true;
+    const list = Array.isArray(exitSurvey?.tech_stack) ? exitSurvey.tech_stack : [];
+    const selected = String(techFilter)
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+    if (!selected.length) return true;
+    const normalized = list.map((t) => String(t).toLowerCase());
+    return selected.some((t) => normalized.includes(t));
+};
+
 // @desc    Create or update incharge profile
 // @route   POST /api/incharge/profile
 // @access  Private (Incharge Only)
@@ -34,7 +61,7 @@ exports.upsertProfile = async (req, res) => {
 // @access  Private (Incharge Only)
 exports.getDashboard = async (req, res) => {
     try {
-        const { status } = req.query; // Optional filter
+        const { status, q, type, dept, sort } = req.query; // Optional filters
 
         let query = supabase
             .from('document_requests')
@@ -50,10 +77,53 @@ exports.getDashboard = async (req, res) => {
             query = query.eq('status', status);
         }
 
-        const { data: requests, error } = await query;
+        const { data: rawRequests, error } = await query;
 
         if (error) {
             return res.status(400).json({ success: false, error: error.message });
+        }
+
+        let requests = rawRequests || [];
+
+        if (type) {
+            const typeNorm = type.toLowerCase();
+            requests = requests.filter((r) =>
+                r.request_types?.name?.toLowerCase().includes(typeNorm) ||
+                r.request_types?.code?.toLowerCase().includes(typeNorm)
+            );
+        }
+
+        if (dept) {
+            const deptNorm = dept.toLowerCase();
+            requests = requests.filter((r) =>
+                (r.student_profiles?.dept || '').toLowerCase() === deptNorm
+            );
+        }
+
+        if (q) {
+            const term = q.toLowerCase().trim();
+            requests = requests.filter((r) => {
+                const searchable = [
+                    r.student_profiles?.full_name,
+                    r.student_profiles?.reg_no,
+                    r.student_profiles?.dept,
+                    r.request_types?.name,
+                    r.request_types?.code,
+                    r.internships?.company_name,
+                    r.internships?.role_title,
+                    r.status
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                return searchable.includes(term);
+            });
+        }
+
+        if (sort === 'oldest') {
+            requests.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        } else {
+            requests.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         }
 
         // Aggregate some basic metrics
@@ -147,21 +217,139 @@ exports.updateRequestStatus = async (req, res) => {
 // @access  Private (Incharge Only)
 exports.getInternships = async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const {
+            q,
+            verification_status,
+            activity_status,
+            mode,
+            internship_type,
+            map_for_credits,
+            year,
+            dept,
+            section,
+            reg_no_start,
+            reg_no_end,
+            company_name,
+            tech_stack,
+            stipend_min,
+            stipend_max,
+            sort
+        } = req.query;
+
+        let { data, error } = await supabase
             .from('internships')
             .select(`
                 *,
                 student_profiles (
-                    full_name, reg_no, dept, year
+                    full_name, reg_no, dept, year, section
                 )
             `)
             .order('created_at', { ascending: false });
+
+        // Compatibility fallback if section column hasn't been migrated yet.
+        if (error && /section/i.test(error.message || '')) {
+            const retry = await supabase
+                .from('internships')
+                .select(`
+                    *,
+                    student_profiles (
+                        full_name, reg_no, dept, year
+                    )
+                `)
+                .order('created_at', { ascending: false });
+            data = retry.data;
+            error = retry.error;
+        }
 
         if (error) {
             return res.status(400).json({ success: false, error: error.message });
         }
 
-        res.status(200).json({ success: true, count: data.length, data });
+        let internships = data || [];
+
+        if (verification_status && verification_status !== 'ALL') {
+            internships = internships.filter((i) => i.verification_status === verification_status);
+        }
+        if (activity_status && activity_status !== 'ALL') {
+            internships = internships.filter((i) => i.activity_status === activity_status);
+        }
+        if (mode && mode !== 'ALL') {
+            internships = internships.filter((i) => i.mode === mode);
+        }
+        if (internship_type && internship_type !== 'ALL') {
+            internships = internships.filter((i) => i.internship_type === internship_type);
+        }
+        if (map_for_credits && map_for_credits !== 'ALL') {
+            const wantCredits = map_for_credits === 'true';
+            internships = internships.filter((i) => Boolean(i.map_for_credits) === wantCredits);
+        }
+        if (year && year !== 'ALL') {
+            internships = internships.filter((i) => String(i.student_profiles?.year || '') === String(year));
+        }
+        if (dept && dept !== 'ALL') {
+            internships = internships.filter((i) => (i.student_profiles?.dept || '').toLowerCase() === String(dept).toLowerCase());
+        }
+        if (section && section !== 'ALL') {
+            internships = internships.filter((i) => (i.student_profiles?.section || '').toLowerCase() === String(section).toLowerCase());
+        }
+        if (company_name) {
+            const term = String(company_name).toLowerCase().trim();
+            internships = internships.filter((i) => (i.company_name || '').toLowerCase().includes(term));
+        }
+        if (tech_stack) {
+            internships = internships.filter((i) => includesAnyTech(i.exit_survey, tech_stack));
+        }
+        if (stipend_min !== undefined || stipend_max !== undefined) {
+            const min = stipend_min !== undefined && stipend_min !== '' ? Number(stipend_min) : null;
+            const max = stipend_max !== undefined && stipend_max !== '' ? Number(stipend_max) : null;
+            internships = internships.filter((i) => {
+                const s = parseStipend(i.stipend);
+                if (s === null) return false;
+                if (min !== null && s < min) return false;
+                if (max !== null && s > max) return false;
+                return true;
+            });
+        }
+        if ((reg_no_start && reg_no_start !== '') || (reg_no_end && reg_no_end !== '')) {
+            const minReg = reg_no_start !== undefined && reg_no_start !== '' ? Number(reg_no_start) : null;
+            const maxReg = reg_no_end !== undefined && reg_no_end !== '' ? Number(reg_no_end) : null;
+            internships = internships.filter((i) => {
+                const reg = extractRegNumeric(i.student_profiles?.reg_no);
+                if (reg === null) return false;
+                if (minReg !== null && reg < minReg) return false;
+                if (maxReg !== null && reg > maxReg) return false;
+                return true;
+            });
+        }
+        if (q) {
+            const term = q.toLowerCase().trim();
+            internships = internships.filter((i) => {
+                const searchable = [
+                    i.company_name,
+                    i.role_title,
+                    i.mode,
+                    i.internship_type,
+                    i.verification_status,
+                    i.activity_status,
+                    i.student_profiles?.full_name,
+                    i.student_profiles?.reg_no,
+                    i.student_profiles?.dept,
+                    i.student_profiles?.section
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                return searchable.includes(term);
+            });
+        }
+
+        if (sort === 'oldest') {
+            internships.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        } else {
+            internships.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+
+        res.status(200).json({ success: true, count: internships.length, data: internships });
     } catch (err) {
         console.error('Get Internships Error:', err);
         res.status(500).json({ success: false, error: 'Server Error' });

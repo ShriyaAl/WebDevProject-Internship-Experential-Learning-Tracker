@@ -216,6 +216,7 @@ export default function Bonafide() {
   const [payloadJson, setPayloadJson] = useState({});
   const [studentNote, setStudentNote] = useState('');
   const [inchargeComment, setInchargeComment] = useState('');
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const token = localStorage.getItem('access_token');
@@ -310,6 +311,42 @@ export default function Bonafide() {
 
   const selectedTypeObj = requestTypes.find(t => t.id === selectedTypeId);
 
+  const handleDownload = async (requestId) => {
+    try {
+      setDownloadingId(requestId);
+      const res = await fetch(`${API_BASE}/api/requests/${requestId}/download`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        let msg = 'Download failed';
+        try {
+          const data = await res.json();
+          msg = data.error || msg;
+        } catch (_) {}
+        throw new Error(msg);
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const filenameMatch = disposition.match(/filename="([^"]+)"/);
+      const filename = filenameMatch?.[1] || `approved_request_${requestId.slice(0, 8)}.html`;
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err.message || 'Download failed');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
 
   return (
@@ -338,8 +375,12 @@ export default function Bonafide() {
 
                 <div className="flex items-center gap-6">
                   {req.status === 'APPROVED' && (
-                    <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-xl">
-                      <Download size={14} /> Download
+                    <button
+                      onClick={() => handleDownload(req.id)}
+                      disabled={downloadingId === req.id}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-xl disabled:opacity-60"
+                    >
+                      {downloadingId === req.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} Download
                     </button>
                   )}
                   {req.status === 'ON_HOLD' && (

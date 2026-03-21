@@ -34,7 +34,8 @@ const normalizeSurveyPayload = (survey) => {
         project_summary,
         roles_skills,
         industry_mentors,
-        learning_rating
+        learning_rating,
+        ppo_received
     } = survey;
 
     if (!Array.isArray(tech_stack)) return null;
@@ -44,12 +45,16 @@ const normalizeSurveyPayload = (survey) => {
     if (!Number.isInteger(learning_rating) || learning_rating < 1 || learning_rating > 10) return null;
     if (!tech_stack.every((item) => typeof item === 'string')) return null;
 
+    const normalizedPpoReceived = normalizeOfferLetterReceived(ppo_received);
+    if (ppo_received !== undefined && normalizedPpoReceived === undefined) return null;
+
     return {
         tech_stack,
         project_summary,
         roles_skills,
         industry_mentors,
-        learning_rating
+        learning_rating,
+        ...(ppo_received !== undefined ? { ppo_received } : {})
     };
 };
 
@@ -224,17 +229,24 @@ exports.submitExitSurvey = async (req, res) => {
         if (!normalizedSurvey) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid exit survey payload. Expected tech_stack, project_summary, roles_skills, industry_mentors and learning_rating (1-10)'
+                error: 'Invalid exit survey payload. Expected tech_stack, project_summary, roles_skills, industry_mentors, learning_rating (1-10), and optional ppo_received (Yes/No)'
             });
+        }
+
+        const updatePayload = {
+            exit_survey: normalizedSurvey,
+            activity_status: 'Completed',
+            updated_at: new Date()
+        };
+
+        const normalizedPpoReceived = normalizeOfferLetterReceived(normalizedSurvey.ppo_received);
+        if (normalizedPpoReceived !== null && normalizedPpoReceived !== undefined) {
+            updatePayload.offer_letter_received = normalizedPpoReceived;
         }
 
         const { data, error } = await supabase
             .from('internships')
-            .update({
-                exit_survey: normalizedSurvey,
-                activity_status: 'Completed',
-                updated_at: new Date()
-            })
+            .update(updatePayload)
             .eq('id', id)
             .eq('student_user_id', userId)
             .select()

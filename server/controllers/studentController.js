@@ -5,27 +5,42 @@ const supabase = require('../config/db');
 // @access  Private (Student Only)
 exports.upsertStudentProfile = async (req, res) => {
     try {
-        const { reg_no, full_name, dept, year, gender, phone, linkedin_url } = req.body;
+        const { reg_no, full_name, dept, year, section, gender, phone, linkedin_url } = req.body;
         const userId = req.user.id;
 
         if (!reg_no || !full_name) {
             return res.status(400).json({ success: false, error: 'Registration number and full name are required' });
         }
 
-        const { data, error } = await supabase
+        const payload = {
+            user_id: userId,
+            reg_no,
+            full_name,
+            dept: dept || 'IT',
+            year,
+            section,
+            gender,
+            phone,
+            linkedin_url
+        };
+
+        let { data, error } = await supabase
             .from('student_profiles')
-            .upsert({
-                user_id: userId,
-                reg_no,
-                full_name,
-                dept: dept || 'IT',
-                year,
-                gender,
-                phone,
-                linkedin_url
-            }, { onConflict: 'user_id' })
+            .upsert(payload, { onConflict: 'user_id' })
             .select()
             .single();
+
+        // Compatibility fallback: if section column migration is not applied yet, retry without it.
+        if (error && /section/i.test(error.message || '')) {
+            const { section: _omit, ...withoutSection } = payload;
+            const retry = await supabase
+                .from('student_profiles')
+                .upsert(withoutSection, { onConflict: 'user_id' })
+                .select()
+                .single();
+            data = retry.data;
+            error = retry.error;
+        }
 
         if (error) {
             return res.status(400).json({ success: false, error: error.message });

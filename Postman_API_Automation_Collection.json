@@ -170,7 +170,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"reg_no\": \"REG-{{$timestamp}}\",\n  \"full_name\": \"Student {{$timestamp}}\",\n  \"dept\": \"IT\",\n  \"year\": 3,\n  \"gender\": \"Other\",\n  \"phone\": \"9876543210\",\n  \"linkedin_url\": \"https://linkedin.com/in/student-{{$timestamp}}\"\n}"
+          "raw": "{\n  \"reg_no\": \"REG-{{$timestamp}}\",\n  \"full_name\": \"Student {{$timestamp}}\",\n  \"dept\": \"IT\",\n  \"year\": 3,\n  \"section\": \"A\",\n  \"gender\": \"Other\",\n  \"phone\": \"9876543210\",\n  \"linkedin_url\": \"https://linkedin.com/in/student-{{$timestamp}}\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/students/profile",
@@ -426,7 +426,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"tech_stack\": [\"React\", \"Node.js\", \"PostgreSQL\"],\n  \"project_summary\": \"Built internship tracker modules and API integrations.\",\n  \"roles_skills\": \"Implemented UI flows, API wiring, and testing.\",\n  \"industry_mentors\": \"Engineering mentor and team lead.\",\n  \"learning_rating\": 9\n}"
+          "raw": "{\n  \"tech_stack\": [\"React\", \"Node.js\", \"PostgreSQL\"],\n  \"project_summary\": \"Built internship tracker modules and API integrations.\",\n  \"roles_skills\": \"Implemented UI flows, API wiring, and testing.\",\n  \"industry_mentors\": \"Engineering mentor and team lead.\",\n  \"learning_rating\": 9,\n  \"ppo_received\": \"Yes\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/internships/{{internship_id}}/exit-survey",
@@ -452,6 +452,7 @@
               "  pm.expect(pm.response.code).to.eql(200);",
               "  pm.expect(json.success).to.eql(true);",
               "  pm.expect(json.data.activity_status).to.eql('Completed');",
+              "  pm.expect(json.data.offer_letter_received).to.eql(true);",
               "});"
             ]
           }
@@ -1066,6 +1067,201 @@
               "  pm.expect(pm.response.code).to.eql(200);",
               "  pm.expect(json.success).to.eql(true);",
               "  pm.expect(json.data.status).to.eql('APPROVED');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "25 Student Download Approved Document",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{student_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/requests/{{request_id}}/download",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "{{request_id}}",
+            "download"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Approved document download success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment');",
+              "  pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "26 Incharge Dashboard Advanced Filter",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/incharge/dashboard?status=ALL&type=BONAFIDE&dept=IT&q=Tech",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "incharge",
+            "dashboard"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "ALL"
+            },
+            {
+              "key": "type",
+              "value": "BONAFIDE"
+            },
+            {
+              "key": "dept",
+              "value": "IT"
+            },
+            {
+              "key": "q",
+              "value": "Tech"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Incharge dashboard advanced filter success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(Array.isArray(json.data)).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "27 Incharge Internship Advanced Filters",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{incharge_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/incharge/internships?verification_status=VERIFIED&activity_status=Completed&map_for_credits=true&year=3&dept=IT&section=A&reg_no_start=1&reg_no_end=999999999&company_name=Tech&internship_type=Off%20Campus&tech_stack=React&stipend_min=1000&stipend_max=100000",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "incharge",
+            "internships"
+          ],
+          "query": [
+            {
+              "key": "verification_status",
+              "value": "VERIFIED"
+            },
+            {
+              "key": "activity_status",
+              "value": "Completed"
+            },
+            {
+              "key": "map_for_credits",
+              "value": "true"
+            },
+            {
+              "key": "year",
+              "value": "3"
+            },
+            {
+              "key": "dept",
+              "value": "IT"
+            },
+            {
+              "key": "section",
+              "value": "A"
+            },
+            {
+              "key": "reg_no_start",
+              "value": "1"
+            },
+            {
+              "key": "reg_no_end",
+              "value": "999999999"
+            },
+            {
+              "key": "company_name",
+              "value": "Tech"
+            },
+            {
+              "key": "internship_type",
+              "value": "Off Campus"
+            },
+            {
+              "key": "tech_stack",
+              "value": "React"
+            },
+            {
+              "key": "stipend_min",
+              "value": "1000"
+            },
+            {
+              "key": "stipend_max",
+              "value": "100000"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Incharge internship advanced filters success', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(Array.isArray(json.data)).to.eql(true);",
+              "});",
+              "pm.test('Filtered results meet key criteria when rows exist', function () {",
+              "  if (json.data.length > 0) {",
+              "    pm.expect(json.data[0].verification_status).to.eql('VERIFIED');",
+              "    pm.expect(json.data[0].activity_status).to.eql('Completed');",
+              "  }",
               "});"
             ]
           }

@@ -1,5 +1,13 @@
 const supabase = require('../config/db');
 
+const escapeHtml = (value = '') =>
+    String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
 // @desc    Create a new document request
 // @route   POST /api/requests
 // @access  Private (Student Only)
@@ -228,5 +236,120 @@ exports.getMyRequests = async (req, res) => {
     } catch (err) {
         console.error('Get My Requests Error:', err);
         res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
+
+// @desc    Download approved request document (dummy signed format for now)
+// @route   GET /api/requests/:id/download
+// @access  Private (Student + Incharge)
+exports.downloadApprovedRequestDocument = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const role = req.user.role;
+
+        const { data: request, error } = await supabase
+            .from('document_requests')
+            .select(`
+                id, status, student_user_id, created_at, incharge_comment,
+                request_types (name, code),
+                internships (company_name, role_title, expected_start_date, expected_end_date, mode),
+                student_profiles (full_name, reg_no, dept, year),
+                request_submissions (payload_json, submitted_at, is_latest)
+            `)
+            .eq('id', id)
+            .single();
+
+        if (error || !request) {
+            return res.status(404).json({ success: false, error: 'Request not found' });
+        }
+
+        if (role === 'STUDENT' && request.student_user_id !== userId) {
+            return res.status(403).json({ success: false, error: 'Not authorized to download this document' });
+        }
+
+        if (request.status !== 'APPROVED') {
+            return res.status(400).json({ success: false, error: 'Document is available only after approval' });
+        }
+
+        const latestSubmission =
+            request.request_submissions?.find((s) => s.is_latest) ||
+            request.request_submissions?.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))[0];
+
+        const payloadRows = Object.entries(latestSubmission?.payload_json || {})
+            .map(([k, v]) => `<tr><td>${escapeHtml(k.replace(/_/g, ' '))}</td><td>${escapeHtml(v)}</td></tr>`)
+            .join('');
+
+        const issueDate = new Date().toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+
+        const html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Approved Request Document</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 32px; color: #0f172a; }
+    .card { border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    .muted { color: #475569; font-size: 12px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: 170px 1fr; row-gap: 8px; column-gap: 12px; margin: 16px 0 20px; }
+    .k { font-weight: 700; color: #334155; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid #cbd5e1; text-align: left; padding: 8px; font-size: 12px; }
+    th { background: #f8fafc; text-transform: uppercase; letter-spacing: .03em; font-size: 11px; }
+    .sig-wrap { margin-top: 32px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .sig { text-align: right; }
+    .sig-line { border-top: 1px solid #64748b; width: 220px; margin-bottom: 6px; }
+    .stamp { display: inline-block; border: 2px dashed #1e40af; color: #1e40af; border-radius: 50%; width: 86px; height: 86px; text-align: center; line-height: 18px; padding-top: 16px; font-weight: 700; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>${escapeHtml(request.request_types?.name || 'Approved Request')}</h1>
+    <div class="muted">Request ID: ${escapeHtml(request.id)} | Issued: ${escapeHtml(issueDate)}</div>
+
+    <div class="grid">
+      <div class="k">Student</div><div>${escapeHtml(request.student_profiles?.full_name || '')}</div>
+      <div class="k">Reg No</div><div>${escapeHtml(request.student_profiles?.reg_no || '')}</div>
+      <div class="k">Department</div><div>${escapeHtml(request.student_profiles?.dept || '')} ${request.student_profiles?.year ? ` (Year ${escapeHtml(request.student_profiles.year)})` : ''}</div>
+      <div class="k">Company</div><div>${escapeHtml(request.internships?.company_name || '')}</div>
+      <div class="k">Role</div><div>${escapeHtml(request.internships?.role_title || '')}</div>
+      <div class="k">Mode</div><div>${escapeHtml(request.internships?.mode || '')}</div>
+      <div class="k">Duration</div><div>${escapeHtml(request.internships?.expected_start_date || '')} to ${escapeHtml(request.internships?.expected_end_date || '')}</div>
+    </div>
+
+    <h3 style="margin: 18px 0 6px; font-size: 14px;">Submitted Details</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Value</th></tr></thead>
+      <tbody>${payloadRows || '<tr><td colspan="2">No submission details</td></tr>'}</tbody>
+    </table>
+
+    ${request.incharge_comment ? `<p style="margin-top: 14px; font-size: 12px;"><strong>In-charge Comment:</strong> ${escapeHtml(request.incharge_comment)}</p>` : ''}
+
+    <div class="sig-wrap">
+      <div class="stamp">INCHARGE<br/>APPROVED</div>
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div style="font-size: 12px; font-weight: 700;">Authorized Signature (Dummy)</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+        const code = (request.request_types?.code || 'REQUEST').toLowerCase();
+        const fileName = `${code}_${request.id.slice(0, 8)}.html`;
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).send(html);
+    } catch (err) {
+        console.error('Download Approved Request Document Error:', err);
+        return res.status(500).json({ success: false, error: 'Server Error' });
     }
 };
